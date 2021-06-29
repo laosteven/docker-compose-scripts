@@ -1,0 +1,7 @@
+*.yml
+*.json
+*.env
+*.sqlite3
+config/
+swag/swag/
+tig-stack/*/

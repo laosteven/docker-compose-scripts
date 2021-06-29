@@ -1,0 +1,34 @@
+version: "2.1"
+services:
+  swag:
+    image: linuxserver/swag
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=
+      - URL=
+      - SUBDOMAINS=
+      - VALIDATION=
+      - DNSPLUGIN=
+      - EMAIL=
+      - ONLY_SUBDOMAINS=false
+      - STAGING=false
+    volumes:
+      - ./swag:/config
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - default
+    restart: unless-stopped
+  authelia:
+    image: authelia/authelia:4.29.3
+    container_name: authelia
+    environment:
+      - TZ=
+    volumes:
+      - ./authelia:/config
+    restart: unless-stopped

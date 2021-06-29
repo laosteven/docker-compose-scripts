@@ -1,0 +1,88 @@
+version: '3.6'
+networks:
+  internal:
+    driver: bridge
+services:
+  telegraf:
+    container_name: telegraf
+    image: telegraf:1.18-alpine
+    volumes:
+    - ./telegraf/etc/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+    networks:
+      - internal
+    ports:
+    - '8125:8125/udp'
+    restart: unless-stopped
+
+  influxdb:
+    hostname: influxdb
+    container_name: influxdb
+    image: influxdb:1.8-alpine
+    env_file: configuration.env
+    networks:
+      - internal
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./:/imports
+      - influxdb_data:/var/lib/influxdb
+    restart: unless-stopped
+
+  varken:
+    hostname: varken
+    container_name: varken
+    image: boerderij/varken
+    networks:
+      - internal
+    volumes:
+      - ./varken:/config
+    environment:
+      - TZ=
+    depends_on:
+      - influxdb
+    links:
+      - influxdb
+    restart: unless-stopped
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:7.5.4
+    depends_on:
+      - influxdb
+      - varken
+    env_file: configuration.env
+    links:
+      - influxdb
+    ports:
+      - '3000:3000'
+    networks:
+      - internal
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
+      - ./grafana/config:/config
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+    restart: unless-stopped
+
+  unifi-poller:
+    container_name: unifi-poller
+    image: golift/unifi-poller:latest
+    depends_on:
+      - influxdb
+      - grafana
+    links:
+      - influxdb
+    networks:
+      - internal
+    volumes:
+      - ./unifi-poller:/config
+    restart: unless-stopped
+
+volumes:
+  grafana_data: {}
+  influxdb_data: {}
